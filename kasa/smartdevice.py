@@ -764,6 +764,11 @@ class SmartDevice:
         """Return True if the device supports color temperature."""
         return False
 
+    @property
+    def is_color(self) -> bool:
+        """Return True if the device supports color changes."""
+        return False
+
     def __repr__(self):
         if self._last_update is None:
             return f"<{self._device_type} at {self.host} - update() needed>"
