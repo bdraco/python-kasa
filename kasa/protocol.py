@@ -48,7 +48,7 @@ class TPLinkSmartHomeProtocol:
             _LOGGER.warning("Detected protocol reuse between different event loop")
             self._reset()
 
-    async def query(self, request: Union[str, Dict], retry_count: int = 3) -> Dict:
+    async def query(self, request: Union[str, Dict], retry_count: int = 5) -> Dict:
         """Request information from a TP-Link SmartHome Device.
 
         :param str host: host name or ip address of the device
@@ -128,9 +128,12 @@ class TPLinkSmartHomeProtocol:
                 if retry >= retry_count:
                     _LOGGER.debug("Giving up after %s retries", retry)
                     raise SmartDeviceException(
-                        f"Unable to connect to the device: {self.host}"
+                        f"Unable to connect to the device: {self.host} after {retry} attempts"
                     )
                 continue
+
+            import pprint
+            pprint.pprint("CONNECTED!")
 
             try:
                 assert self.reader is not None
@@ -139,11 +142,13 @@ class TPLinkSmartHomeProtocol:
                     self._execute_query(request), timeout=timeout
                 )
             except Exception as ex:
+                import pprint
+                pprint.pprint(["Got exception", ex])
                 await self.close()
                 if retry >= retry_count:
                     _LOGGER.debug("Giving up after %s retries", retry)
                     raise SmartDeviceException(
-                        f"Unable to query the device: {ex}"
+                        f"Unable to query the device: {ex} after {retry} attempts"
                     ) from ex
 
                 _LOGGER.debug("Unable to query the device, retrying: %s", ex)

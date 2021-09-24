@@ -7,6 +7,8 @@ from .newfakes import PLUG_SCHEMA
 @plug
 async def test_plug_sysinfo(dev):
     assert dev.sys_info is not None
+    import pprint
+    pprint.pprint(dev.sys_info)
     PLUG_SCHEMA(dev.sys_info)
 
     assert dev.model is not None
