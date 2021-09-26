@@ -34,6 +34,7 @@ class TPLinkSmartHomeProtocol:
     def __init__(self, host: str) -> None:
         """Create a protocol object."""
         self.host = host
+        self.timeout: float = TPLinkSmartHomeProtocol.DEFAULT_TIMEOUT
         self.reader: Optional[asyncio.StreamReader] = None
         self.writer: Optional[asyncio.StreamWriter] = None
         self.query_lock: Optional[asyncio.Lock] = None
@@ -66,23 +67,32 @@ class TPLinkSmartHomeProtocol:
             request = json.dumps(request)
             assert isinstance(request, str)
 
-        timeout = TPLinkSmartHomeProtocol.DEFAULT_TIMEOUT
-
         async with self.query_lock:
-            return await self._query(request, retry_count, timeout)
+            return await self._query(request, retry_count)
 
-    async def _connect(self, timeout: int) -> bool:
+    async def _connect(self) -> bool:
         """Try to connect or reconnect to the device."""
+        _LOGGER.debug("Checking if connected")
         if self.writer:
+            _LOGGER.debug("Already connected")
             return True
+
+        _LOGGER.debug("Connecting...")
+        reader = writer = self.reader = self.writer = None
+        task = asyncio.open_connection(self.host, TPLinkSmartHomeProtocol.DEFAULT_PORT)
 
         with contextlib.suppress(Exception):
-            self.reader = self.writer = None
-            task = asyncio.open_connection(
-                self.host, TPLinkSmartHomeProtocol.DEFAULT_PORT
-            )
-            self.reader, self.writer = await asyncio.wait_for(task, timeout=timeout)
+            reader, writer = await asyncio.wait_for(task, timeout=self.timeout)
+
+        if reader:
+            _LOGGER.debug("Connected!")
+            self.reader = reader
+            self.writer = writer
             return True
+        else:
+            _LOGGER.debug("Failed to connect")
+            with contextlib.suppress(Exception):
+                await task
 
         return False
 
@@ -123,10 +133,10 @@ class TPLinkSmartHomeProtocol:
         self.query_lock = None
         self.loop = None
 
-    async def _query(self, request: str, retry_count: int, timeout: int) -> Dict:
+    async def _query(self, request: str, retry_count: int) -> Dict:
         """Try to query a device."""
         for retry in range(retry_count + 1):
-            if not await self._connect(timeout):
+            if not await self._connect():
                 await self.close()
                 if retry >= retry_count:
                     _LOGGER.debug("Giving up after %s retries", retry)
@@ -135,13 +145,15 @@ class TPLinkSmartHomeProtocol:
                     )
                 continue
 
+            assert self.reader is not None
+            assert self.writer is not None
+            task = self._execute_query(request)
+            ret = None
             try:
-                assert self.reader is not None
-                assert self.writer is not None
-                return await asyncio.wait_for(
-                    self._execute_query(request), timeout=timeout
-                )
+                ret = await asyncio.wait_for(task, timeout=self.timeout)
             except Exception as ex:
+                with contextlib.suppress(Exception):
+                    await task
                 await self.close()
                 if retry >= retry_count:
                     _LOGGER.debug("Giving up after %s retries", retry)
@@ -150,6 +162,8 @@ class TPLinkSmartHomeProtocol:
                     ) from ex
 
                 _LOGGER.debug("Unable to query the device, retrying: %s", ex)
+            else:
+                return ret
 
         # make mypy happy, this should never be reached..
         await self.close()
