@@ -436,6 +436,18 @@ MarkupSafe = ">=2.0"
 i18n = ["Babel (>=2.7)"]
 
 [[package]]
+name = "kasa-crypt"
+version = "0.2.0"
+description = "Fast kasa crypt"
+category = "main"
+optional = false
+python-versions = ">=3.7,<4.0"
+files = [
+    {file = "kasa_crypt-0.2.0-cp310-cp310-manylinux_2_31_x86_64.whl", hash = "sha256:9676ac702aa62252fb4de3d5c9ee4895dd93610b9c37e732213b0914fbc0e255"},
+    {file = "kasa_crypt-0.2.0.tar.gz", hash = "sha256:ad2e73276f09ed035d53006985b08eb78869f73e60ac5d66547d9ddc35cb8cc4"},
+]
+
+[[package]]
 name = "markdown-it-py"
 version = "2.2.0"
 description = "Python port of markdown-it. Markdown parsing, done right!"
@@ -1381,4 +1393,4 @@ docs = ["sphinx", "sphinx_rtd_theme", "sphinxcontrib-programoutput", "myst-parse
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "5071ca567750a8ceccfb217645c959e1533ddc0e56311ddc29ed6a2293ef2265"
+content-hash = "6052924fc0823d6a078bac2b7eda9b6add7477428807933909976d356f0c6f61"
