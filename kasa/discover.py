@@ -322,6 +322,7 @@ class Discover:
         # Reuse the connection from the unknown device
         # so we don't have to reconnect
         dev.protocol = unknown_dev.protocol
+        await dev.update()
         return dev
 
     @staticmethod
