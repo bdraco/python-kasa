@@ -304,7 +304,7 @@ class Discover:
         host: str,
         *,
         port: Optional[int] = None,
-        timeout=5,
+        timeout=10,  # 5 for the first update, 5 for the second
         credentials: Optional[Credentials] = None,
     ) -> SmartDevice:
         """Connect to a single device by the given IP address.
@@ -322,6 +322,7 @@ class Discover:
         # Reuse the connection from the unknown device
         # so we don't have to reconnect
         dev.protocol = unknown_dev.protocol
+        await dev.update()
         return dev
 
     @staticmethod
