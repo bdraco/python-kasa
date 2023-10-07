@@ -304,7 +304,7 @@ class Discover:
         host: str,
         *,
         port: Optional[int] = None,
-        timeout=10,  # 5 for the first update, 5 for the second
+        timeout=5,
         credentials: Optional[Credentials] = None,
     ) -> SmartDevice:
         """Connect to a single device by the given IP address.
