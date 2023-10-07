@@ -249,7 +249,9 @@ class SmartDevice:
         if not self.has_emeter:
             raise SmartDeviceException("Device has no emeter")
         if self.emeter_type not in self._last_update:
-            raise SmartDeviceException("update() required prior accessing emeter")
+            raise SmartDeviceException(
+                f"update() required prior accessing emeter: {self._last_update}"
+            )
 
     async def _query_helper(
         self, target: str, cmd: str, arg: Optional[Dict] = None, child_ids=None
@@ -324,8 +326,9 @@ class SmartDevice:
         # See #105, #120, #161
         if self._last_update is None:
             _LOGGER.debug("Performing the initial update to obtain sysinfo")
-            self._last_update = await self.protocol.query(req)
-            self._set_sys_info(self._last_update["system"]["get_sysinfo"])
+            response = await self.protocol.query(req)
+            self._last_update = response
+            self._set_sys_info(response["system"]["get_sysinfo"])
 
         await self._modular_update(req)
         self._set_sys_info(self._last_update["system"]["get_sysinfo"])
@@ -369,7 +372,7 @@ class SmartDevice:
             update = {**update, **response}
         self._last_update = update
 
-    def update_from_discover_info(self, info):
+    def update_from_discover_info(self, info: Dict[str, Any]) -> None:
         """Update state from info from the discover call."""
         self._last_update = info
         self._set_sys_info(info["system"]["get_sysinfo"])
@@ -377,7 +380,10 @@ class SmartDevice:
     def _set_sys_info(self, sys_info: Dict[str, Any]) -> None:
         """Set sys_info."""
         self._sys_info = sys_info
-        self._features = _parse_features(sys_info.get("feature", ""))
+        if features := sys_info.get("feature"):
+            self._features = _parse_features(features)
+        else:
+            self._features = set()
 
     @property  # type: ignore
     @requires_update
