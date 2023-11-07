@@ -326,7 +326,6 @@ class Discover:
         if ip in protocol.discovered_devices:
             dev = protocol.discovered_devices[ip]
             dev.host = host
-            await dev.update()
             return dev
         elif ip in protocol.unsupported_devices:
             raise UnsupportedDeviceException(
