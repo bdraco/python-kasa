@@ -260,6 +260,7 @@ class Discover:
         port: Optional[int] = None,
         timeout=5,
         credentials: Optional[Credentials] = None,
+        update_parent_devices: bool = True,
     ) -> SmartDevice:
         """Discover a single device by the given IP address.
 
@@ -269,6 +270,11 @@ class Discover:
         to discovery requests.
 
         :param host: Hostname of device to query
+        :param port: Port number override for original 9999 protocl
+        :param timeout: Timeout in seconds if no response
+        :param credentials: Credentials for devices that require authentication
+        :param update_parent_devices: Automatically call device.update() on
+            devices that have children
         :rtype: SmartDevice
         :return: Object for querying/controlling found device.
         """
@@ -326,6 +332,9 @@ class Discover:
         if ip in protocol.discovered_devices:
             dev = protocol.discovered_devices[ip]
             dev.host = host
+            # Call device update on devices that have children
+            if update_parent_devices and isinstance(dev, SmartStrip):
+                await dev.update()
             return dev
         elif ip in protocol.unsupported_devices:
             raise UnsupportedDeviceException(

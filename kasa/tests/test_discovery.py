@@ -5,7 +5,14 @@ import sys
 
 import pytest  # type: ignore # https://github.com/pytest-dev/pytest/issues/3342
 
-from kasa import DeviceType, Discover, SmartDevice, SmartDeviceException, protocol
+from kasa import (
+    DeviceType,
+    Discover,
+    SmartDevice,
+    SmartDeviceException,
+    SmartStrip,
+    protocol,
+)
 from kasa.discover import _DiscoverProtocol, json_dumps
 from kasa.exceptions import UnsupportedDeviceException
 
@@ -60,6 +67,7 @@ async def test_discover_single(discovery_data: dict, mocker, custom_port):
     """Make sure that discover_single returns an initialized SmartDevice instance."""
     host = "127.0.0.1"
     info = {"system": {"get_sysinfo": discovery_data["system"]["get_sysinfo"]}}
+    query_mock = mocker.patch("kasa.TPLinkSmartHomeProtocol.query", return_value=info)
 
     def mock_discover(self):
         self.datagram_received(
@@ -73,6 +81,7 @@ async def test_discover_single(discovery_data: dict, mocker, custom_port):
     assert issubclass(x.__class__, SmartDevice)
     assert x._sys_info is not None
     assert x.port == custom_port or x.port == 9999
+    assert (query_mock.call_count > 0) == isinstance(x, SmartStrip)
 
 
 async def test_discover_single_hostname(discovery_data: dict, mocker):
@@ -80,6 +89,7 @@ async def test_discover_single_hostname(discovery_data: dict, mocker):
     host = "foobar"
     ip = "127.0.0.1"
     info = {"system": {"get_sysinfo": discovery_data["system"]["get_sysinfo"]}}
+    query_mock = mocker.patch("kasa.TPLinkSmartHomeProtocol.query", return_value=info)
 
     def mock_discover(self):
         self.datagram_received(
@@ -94,6 +104,7 @@ async def test_discover_single_hostname(discovery_data: dict, mocker):
     assert issubclass(x.__class__, SmartDevice)
     assert x._sys_info is not None
     assert x.host == host
+    assert (query_mock.call_count > 0) == isinstance(x, SmartStrip)
 
     mocker.patch("socket.getaddrinfo", side_effect=socket.gaierror())
     with pytest.raises(SmartDeviceException):
