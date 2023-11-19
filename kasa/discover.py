@@ -333,7 +333,7 @@ class Discover:
             dev = protocol.discovered_devices[ip]
             dev.host = host
             # Call device update on devices that have children
-            if update_parent_devices and isinstance(dev, SmartStrip):
+            if update_parent_devices and dev.has_children:
                 await dev.update()
             return dev
         elif ip in protocol.unsupported_devices:
